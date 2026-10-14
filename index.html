@@ -202,7 +202,7 @@
         </div>
     </div>
 
-    <!-- JavaScript Logic -->
+        <!-- JavaScript Logic -->
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             // --- TYPEWRITER EFFECT LOGIC ---
@@ -232,10 +232,8 @@
                         typeSpeed = 500; 
                     }
                 }
-
                 setTimeout(typeWriter, typeSpeed);
             }
-
             typeWriter();
 
 
@@ -247,13 +245,17 @@
 
             let isChatActive = false;
 
+            // Keep a history of messages to send to the AI
+            let messageHistory = [];
+
             userInput.addEventListener('input', function() {
                 this.style.height = 'auto';
                 this.style.height = (this.scrollHeight) + 'px';
                 if(this.value === '') this.style.height = 'auto';
             });
 
-            function sendMessage(text) {
+            // NEW: Real Fetch Request to Cloudflare Worker
+            async function sendMessage(text) {
                 const message = text || userInput.value.trim();
                 if (!message) return;
 
@@ -267,25 +269,51 @@
                     isChatActive = true;
                 }
 
+                // Add user message to UI and history
                 addMessageToChat('user', message);
+                messageHistory.push({ role: 'user', content: message });
+                
                 userInput.value = '';
                 userInput.style.height = 'auto';
 
-                setTimeout(() => {
-                    const mockResponses = [
-                        "Ashra is currently focused on her studies, but she loves hanging out with friends on weekends.",
-                        "I can't disclose too much about her romantic life, but she's very happy right now!",
-                        "Ashra's family is doing great. They recently had a lovely dinner together.",
-                        "She has a very busy school schedule, but she always makes time for her hobbies.",
-                        "That's a great question! Ashra's everyday life is a mix of studying, relaxing, and spending time with loved ones."
-                    ];
-                    const randomResponse = mockResponses[Math.floor(Math.random() * mockResponses.length)];
-                    addMessageToChat('assistant', randomResponse);
-                }, 800);
+                // Show a temporary "Thinking..." message
+                const thinkingId = 'thinking-' + Date.now();
+                addMessageToChat('assistant', "Thinking...", thinkingId);
+
+                try {
+                    // Replace this URL with your actual Worker URL!
+                    const WORKER_URL = 'https://ashra-chat-assistant.YOUR-SUBDOMAIN.workers.dev'; 
+                    
+                    const response = await fetch(WORKER_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ 
+                            messages: messageHistory 
+                        })
+                    });
+
+                    if (!response.ok) throw new Error("Network response was not ok");
+
+                    const data = await response.json();
+                    
+                    // Remove the "Thinking..." message
+                    document.getElementById(thinkingId)?.remove();
+
+                    // Add the real AI response
+                    addMessageToChat('assistant', data.response);
+                    messageHistory.push({ role: 'assistant', content: data.response });
+
+                } catch (error) {
+                    console.error("Error:", error);
+                    document.getElementById(thinkingId)?.remove();
+                    addMessageToChat('assistant', "Sorry, I'm having trouble connecting to Ashra's brain right now.");
+                }
             }
 
-            function addMessageToChat(role, text) {
+            function addMessageToChat(role, text, id = null) {
                 const msgDiv = document.createElement('div');
+                if (id) msgDiv.id = id;
+                
                 msgDiv.className = `chat-message flex w-full ${role === 'user' ? 'justify-end' : 'justify-start'}`;
 
                 const bubble = document.createElement('div');
