@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ashra's Assistant</title>
+
+    <link rel="icon" type="image/png" href="src\pinkblob.png">
     
     <!-- Google Sans Font -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -357,7 +359,7 @@
 
             // 1. Share / Copy Link Button
             document.getElementById('share-btn').addEventListener('click', async () => {
-                const url = window.location.href;
+                const url = 'https://ashra-ai-assistant.pages.dev/';
                 try {
                     await navigator.clipboard.writeText(url);
                     showToast('🔗 Link copied to clipboard!');
