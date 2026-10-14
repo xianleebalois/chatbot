@@ -152,8 +152,15 @@
     <!-- Top Nav -->
     <header class="flex justify-between items-center p-4 text-gray-500">
         <div class="flex items-center gap-2">
-            <button id="menu-btn" class="p-2 hover:bg-gray-200 rounded-lg transition">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><path d="M9 3v18"/></svg>
+            <!-- 🗑️ NEW CHAT / CLEAR BUTTON -->
+            <button id="menu-btn" title="New chat" class="p-2 hover:bg-gray-200 rounded-lg transition">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 6h18"/>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/>
+                    <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                    <line x1="10" y1="11" x2="10" y2="17"/>
+                    <line x1="14" y1="11" x2="14" y2="17"/>
+                </svg>
             </button>
         </div>
         <div class="flex items-center gap-4">
@@ -260,6 +267,20 @@
             let isChatActive = false;
             let messageHistory = [];
 
+            // 🧠 Restore saved chat from localStorage on page load
+            try {
+                const saved = localStorage.getItem('ashra_chat_history');
+                if (saved) {
+                    const parsed = JSON.parse(saved);
+                    if (Array.isArray(parsed) && parsed.length > 0) {
+                        messageHistory = parsed;
+                        restoreChatUI(parsed);
+                    }
+                }
+            } catch (e) {
+                console.warn("Could not restore chat:", e);
+            }
+
             userInput.addEventListener('input', function() {
                 this.style.height = 'auto';
                 this.style.height = (this.scrollHeight) + 'px';
@@ -282,6 +303,7 @@
 
                 addMessageToChat('user', message);
                 messageHistory.push({ role: 'user', content: message });
+                saveChatToStorage();
                 
                 userInput.value = '';
                 userInput.style.height = 'auto';
@@ -305,6 +327,7 @@
                     document.getElementById(thinkingId)?.remove();
                     addMessageToChat('assistant', data.response);
                     messageHistory.push({ role: 'assistant', content: data.response });
+                    saveChatToStorage();
 
                 } catch (error) {
                     console.error("Error:", error);
@@ -322,10 +345,8 @@
     const bubble = document.createElement('div');
     
     if (role === 'user') {
-        // ✅ Seamless gradient + softer text
         bubble.className = 'bg-gradient-to-r from-pastelPink to-pastelGreen text-gray-600 px-5 py-3 rounded-2xl rounded-tr-sm max-w-[80%] shadow-sm font-google bg-clip-padding';
     } else {
-        // ✅ Softer text on assistant bubbles too
         bubble.className = 'bg-white border border-gray-100 text-gray-600 px-5 py-3 rounded-2xl rounded-tl-sm max-w-[80%] shadow-sm font-google';
     }
 
@@ -335,6 +356,27 @@
 
     chatHistory.scrollIntoView({ behavior: 'smooth', block: 'end' });
 }
+
+            // 🧠 Persist chat to localStorage
+            function saveChatToStorage() {
+                try {
+                    localStorage.setItem('ashra_chat_history', JSON.stringify(messageHistory));
+                } catch (e) {
+                    console.warn("Could not save chat:", e);
+                }
+            }
+
+            // 🧠 Rebuild the chat UI from saved messages
+            function restoreChatUI(messages) {
+                greetingState.classList.add('hidden');
+                chatHistory.classList.remove('hidden');
+                chatHistory.classList.add('flex');
+                isChatActive = true;
+
+                messages.forEach(msg => {
+                    addMessageToChat(msg.role, msg.content);
+                });
+            }
 
             sendBtn.addEventListener('click', () => sendMessage());
             
@@ -366,7 +408,6 @@
                     await navigator.clipboard.writeText(url);
                     showToast('🔗 Link copied to clipboard!');
                 } catch (err) {
-                    // Fallback for older browsers or non-secure contexts
                     const tempInput = document.createElement('input');
                     tempInput.value = url;
                     document.body.appendChild(tempInput);
@@ -397,7 +438,7 @@
                 showToast('⬇️ Chat exported!');
             });
 
-            // 3. Menu Button (placeholder)
+            // 3. Trash Button (clear chat + wipe memory)
             document.getElementById('menu-btn').addEventListener('click', () => {
                 if (messageHistory.length === 0) {
                     showToast('Nothing to clear.');
@@ -405,6 +446,7 @@
                 }
                 if (confirm('Clear this chat and start over?')) {
                     messageHistory = [];
+                    localStorage.removeItem('ashra_chat_history');
                     chatHistory.innerHTML = '';
                     chatHistory.classList.add('hidden');
                     chatHistory.classList.remove('flex');
