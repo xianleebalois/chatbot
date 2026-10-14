@@ -314,25 +314,27 @@
             }
 
             function addMessageToChat(role, text, id = null) {
-                const msgDiv = document.createElement('div');
-                if (id) msgDiv.id = id;
-                
-                msgDiv.className = `chat-message flex w-full ${role === 'user' ? 'justify-end' : 'justify-start'}`;
+    const msgDiv = document.createElement('div');
+    if (id) msgDiv.id = id;
+    
+    msgDiv.className = `chat-message flex w-full ${role === 'user' ? 'justify-end' : 'justify-start'}`;
 
-                const bubble = document.createElement('div');
-                
-                if (role === 'user') {
-                    bubble.className = 'bg-gradient-to-r from-pastelPink via-pastelGreen to-pastelPink text-gray-800 px-5 py-3 rounded-2xl rounded-tr-sm max-w-[80%] shadow-sm font-google';
-                } else {
-                    bubble.className = 'bg-white border border-gray-100 text-gray-700 px-5 py-3 rounded-2xl rounded-tl-sm max-w-[80%] shadow-sm font-google';
-                }
+    const bubble = document.createElement('div');
+    
+    if (role === 'user') {
+        // ✅ Seamless gradient + softer text
+        bubble.className = 'bg-gradient-to-r from-pastelPink to-pastelGreen text-gray-600 px-5 py-3 rounded-2xl rounded-tr-sm max-w-[80%] shadow-sm font-google bg-clip-padding';
+    } else {
+        // ✅ Softer text on assistant bubbles too
+        bubble.className = 'bg-white border border-gray-100 text-gray-600 px-5 py-3 rounded-2xl rounded-tl-sm max-w-[80%] shadow-sm font-google';
+    }
 
-                bubble.textContent = text;
-                msgDiv.appendChild(bubble);
-                chatHistory.appendChild(msgDiv);
+    bubble.textContent = text;
+    msgDiv.appendChild(bubble);
+    chatHistory.appendChild(msgDiv);
 
-                chatHistory.scrollIntoView({ behavior: 'smooth', block: 'end' });
-            }
+    chatHistory.scrollIntoView({ behavior: 'smooth', block: 'end' });
+}
 
             sendBtn.addEventListener('click', () => sendMessage());
             
